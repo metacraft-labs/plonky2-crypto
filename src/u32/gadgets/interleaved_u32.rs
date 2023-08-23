@@ -38,6 +38,7 @@ pub trait CircuitBuilderB32<F: RichField + Extendable<D>, const D: usize> {
 
     fn not_u64(&mut self, x: &[U32Target; 2]) -> [U32Target; 2];
     fn lrot_u64(&mut self, a: &[U32Target; 2], n: u8) -> [U32Target; 2];
+    fn rrot_u64(&mut self, a: &[U32Target; 2], n: u8) -> [U32Target; 2];
     fn xor_u64(&mut self, x: &[U32Target; 2], y: &[U32Target; 2]) -> [U32Target; 2];
     fn and_u64(&mut self, x: &[U32Target; 2], y: &[U32Target; 2]) -> [U32Target; 2];
     fn unsafe_xor_many_u64(&mut self, x: &[[U32Target; 2]]) -> [U32Target; 2];
@@ -215,6 +216,10 @@ impl<F: RichField + Extendable<D>, const D: usize> CircuitBuilderB32<F, D>
         let (lo0, hi0) = self.mul_u32(lo, power_of_two);
         let (lo1, hi1) = self.mul_add_u32(hi, power_of_two, hi0);
         [self.add_u32(lo0, hi1).0, lo1]
+    }
+
+    fn rrot_u64(&mut self, a: &[U32Target; 2], n: u8) -> [U32Target; 2] {
+        self.lrot_u64(a, 64-n)
     }
 
     fn unsafe_xor_many_u64(&mut self, x: &[[U32Target; 2]]) -> [U32Target; 2] {
