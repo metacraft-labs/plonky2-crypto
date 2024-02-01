@@ -19,6 +19,7 @@ use plonky2::plonk::vars::{
     EvaluationTargets, EvaluationVars, EvaluationVarsBase, EvaluationVarsBaseBatch,
     EvaluationVarsBasePacked,
 };
+use plonky2::util::serialization::{Read, Write};
 
 /// TODO: This code is grossly redundant to uninterleave_to_u32.rs, the diff is literally four lines (the calculation of coeff)
 /// Just wanted something up quickly, a cleaner more future-proof solution would be to make this one gate with
@@ -252,13 +253,14 @@ impl<F: RichField + Extendable<D>, const D: usize> Gate<F, D> for UninterleaveTo
     }
 
     fn serialize(&self, dst: &mut Vec<u8>, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<()> {
-        todo!()
+        dst.write_usize(self.num_ops)
     }
 
     fn deserialize(src: &mut plonky2::util::serialization::Buffer, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<Self>
     where
         Self: Sized {
-        todo!()
+        let num_ops = src.read_usize()?;
+        Ok(Self { num_ops })
     }
 }
 
@@ -366,17 +368,22 @@ impl<F: RichField + Extendable<D>, const D: usize> SimpleGenerator<F, D> for Uni
     }
 
     fn id(&self) -> String {
-        todo!()
+        "UninterleaveToB32Generator".to_string()
     }
 
     fn serialize(&self, dst: &mut Vec<u8>, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<()> {
-        todo!()
+        self.gate.serialize(dst, common_data)?;
+        dst.write_usize(self.row)?;
+        dst.write_usize(self.i)
     }
 
     fn deserialize(src: &mut plonky2::util::serialization::Buffer, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<Self>
     where
         Self: Sized {
-        todo!()
+        let gate = UninterleaveToB32Gate::deserialize(src, common_data)?;
+        let row = src.read_usize()?;
+        let i = src.read_usize()?;
+        Ok(Self { gate, row, i })
     }
 }
 
