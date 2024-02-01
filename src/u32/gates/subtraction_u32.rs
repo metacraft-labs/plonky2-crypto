@@ -22,10 +22,11 @@ use plonky2::plonk::vars::{
     EvaluationTargets, EvaluationVars, EvaluationVarsBase, EvaluationVarsBaseBatch,
     EvaluationVarsBasePacked,
 };
+use plonky2::util::serialization::{Read, Write};
 
 /// A gate to perform a subtraction on 32-bit limbs: given `x`, `y`, and `borrow`, it returns
 /// the result `x - y - borrow` and, if this underflows, a new `borrow`. Inputs are not range-checked.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct U32SubtractionGate<F: RichField + Extendable<D>, const D: usize> {
     pub num_ops: usize,
     _phantom: PhantomData<F>,
@@ -220,13 +221,17 @@ impl<F: RichField + Extendable<D>, const D: usize> Gate<F, D> for U32Subtraction
     }
 
     fn serialize(&self, dst: &mut Vec<u8>, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<()> {
-        todo!()
+        dst.write_usize(self.num_ops)
     }
 
     fn deserialize(src: &mut plonky2::util::serialization::Buffer, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<Self>
     where
         Self: Sized {
-        todo!()
+        let num_ops = src.read_usize()?;
+        Ok(Self {
+            num_ops,
+            _phantom: PhantomData
+        })
     }
 }
 
@@ -272,8 +277,8 @@ impl<F: RichField + Extendable<D>, const D: usize> PackedEvaluableBase<F, D>
     }
 }
 
-#[derive(Clone, Debug)]
-struct U32SubtractionGenerator<F: RichField + Extendable<D>, const D: usize> {
+#[derive(Clone, Debug, Default)]
+pub struct U32SubtractionGenerator<F: RichField + Extendable<D>, const D: usize> {
     gate: U32SubtractionGate<F, D>,
     row: usize,
     i: usize,
@@ -341,17 +346,27 @@ impl<F: RichField + Extendable<D>, const D: usize> SimpleGenerator<F, D>
     }
 
     fn id(&self) -> String {
-        todo!()
+        "U32SubtractionGenerator".to_string()
     }
 
     fn serialize(&self, dst: &mut Vec<u8>, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<()> {
-        todo!()
+        self.gate.serialize(dst, common_data)?;
+        dst.write_usize(self.row)?;
+        dst.write_usize(self.i)
     }
 
     fn deserialize(src: &mut plonky2::util::serialization::Buffer, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<Self>
     where
         Self: Sized {
-        todo!()
+        let gate = U32SubtractionGate::deserialize(src, common_data)?;
+        let row = src.read_usize()?;
+        let i = src.read_usize()?;
+        Ok(Self {
+            gate,
+            row,
+            i,
+            _phantom: PhantomData,
+        })
     }
 }
 

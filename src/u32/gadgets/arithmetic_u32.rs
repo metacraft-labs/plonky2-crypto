@@ -14,7 +14,7 @@ use crate::u32::gates::arithmetic_u32::U32ArithmeticGate;
 use crate::u32::gates::subtraction_u32::U32SubtractionGate;
 use crate::u32::witness::GeneratedValuesU32;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct U32Target(pub Target);
 
 pub trait CircuitBuilderU32<F: RichField + Extendable<D>, const D: usize> {

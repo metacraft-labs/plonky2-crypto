@@ -19,13 +19,14 @@ use plonky2::plonk::vars::{
     EvaluationTargets, EvaluationVars, EvaluationVarsBase, EvaluationVarsBaseBatch,
     EvaluationVarsBasePacked,
 };
+use plonky2::util::serialization::{Read, Write};
 
 /// Note: This gate should not be used for arbitrary targets, its specific use case
 /// is to be applied to the sum of the outputs of two instances of the U32InterleaveGate.
 ///
 /// Given a Goldilocks field element, treat it as 0bxyxyxy...
 /// and split it into two U32Targets, 0bxxx... and 0byyy...
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct UninterleaveToU32Gate {
     pub num_ops: usize,
 }
@@ -247,13 +248,14 @@ impl<F: RichField + Extendable<D>, const D: usize> Gate<F, D> for UninterleaveTo
     }
 
     fn serialize(&self, dst: &mut Vec<u8>, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<()> {
-        todo!()
+        dst.write_usize(self.num_ops)
     }
 
     fn deserialize(src: &mut plonky2::util::serialization::Buffer, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<Self>
     where
         Self: Sized {
-        todo!()
+        let num_ops = src.read_usize()?;
+        Ok(Self {num_ops})
     }
 }
 
@@ -306,7 +308,7 @@ impl<F: RichField + Extendable<D>, const D: usize> PackedEvaluableBase<F, D>
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct UninterleaveToU32Generator {
     gate: UninterleaveToU32Gate,
     row: usize,
@@ -361,17 +363,22 @@ impl<F: RichField + Extendable<D>, const D: usize> SimpleGenerator<F, D> for Uni
     }
 
     fn id(&self) -> String {
-        todo!()
+        "UninterleaveToU32Generator".to_string()
     }
 
     fn serialize(&self, dst: &mut Vec<u8>, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<()> {
-        todo!()
+        self.gate.serialize(dst, common_data)?;
+        dst.write_usize(self.row)?;
+        dst.write_usize(self.i)
     }
 
     fn deserialize(src: &mut plonky2::util::serialization::Buffer, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<Self>
     where
         Self: Sized {
-        todo!()
+        let gate = UninterleaveToU32Gate::deserialize(src, common_data)?;
+        let row = src.read_usize()?;
+        let i = src.read_usize()?;
+        Ok(Self {gate, row, i})
     }
 }
 

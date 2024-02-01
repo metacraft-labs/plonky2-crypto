@@ -1,9 +1,10 @@
 use core::ops::Range;
+use std::any::Any;
 
 use plonky2::field::extension::Extendable;
 use plonky2::field::packed::PackedField;
 use plonky2::field::types::Field;
-use plonky2::gates::gate::Gate;
+use plonky2::gates::gate::{AnyGate, Gate};
 use plonky2::gates::packed_util::PackedEvaluableBase;
 use plonky2::gates::util::StridedConstraintConsumer;
 use plonky2::hash::hash_types::RichField;
@@ -13,12 +14,13 @@ use plonky2::iop::target::Target;
 use plonky2::iop::wire::Wire;
 use plonky2::iop::witness::{PartitionWitness, Witness, WitnessWrite};
 use plonky2::plonk::circuit_builder::CircuitBuilder;
-use plonky2::plonk::circuit_data::CircuitConfig;
+use plonky2::plonk::circuit_data::{CircuitConfig, CommonCircuitData};
 use plonky2::plonk::plonk_common::{reduce_with_powers, reduce_with_powers_ext_circuit};
 use plonky2::plonk::vars::{
     EvaluationTargets, EvaluationVars, EvaluationVarsBase, EvaluationVarsBaseBatch,
     EvaluationVarsBasePacked,
 };
+use plonky2::util::serialization::{Buffer, IoResult, Read, Write};
 
 /// Take a target x, which we assume is constrained to be a U32, and interleave it with zeroes (allows efficient XOR and AND)
 ///
@@ -28,7 +30,7 @@ use plonky2::plonk::vars::{
 /// An example
 ///   x:             b0000_0000_0000_0000_1111_0111_0011_1110
 ///   x_interleaved: b0101_0101_0001_0101_0000_0101_0101_0100
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct U32InterleaveGate {
     pub num_ops: usize,
 }
@@ -83,6 +85,19 @@ impl U32InterleaveGate {
 impl<F: RichField + Extendable<D>, const D: usize> Gate<F, D> for U32InterleaveGate {
     fn id(&self) -> String {
         format!("{self:?}")
+    }
+
+    fn serialize(&self, dst: &mut Vec<u8>, _common_data: &CommonCircuitData<F, D>) -> IoResult<()> {
+        dst.write_usize(self.num_ops)?;
+        Ok(())
+    }
+
+    fn deserialize(src: &mut Buffer, _common_data: &CommonCircuitData<F, D>) -> IoResult<Self>
+        where
+            Self: Sized,
+    {
+        let num_ops = src.read_usize()?;
+        Ok(Self {num_ops})
     }
 
     fn eval_unfiltered(&self, vars: EvaluationVars<F, D>) -> Vec<F::Extension> {
@@ -213,16 +228,6 @@ impl<F: RichField + Extendable<D>, const D: usize> Gate<F, D> for U32InterleaveG
     fn num_constraints(&self) -> usize {
         self.num_ops * (Self::NUM_BITS + 1 + 1)
     }
-
-    fn serialize(&self, dst: &mut Vec<u8>, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<()> {
-        todo!()
-    }
-
-    fn deserialize(src: &mut plonky2::util::serialization::Buffer, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<Self>
-    where
-        Self: Sized {
-        todo!()
-    }
 }
 
 impl<F: RichField + Extendable<D>, const D: usize> PackedEvaluableBase<F, D> for U32InterleaveGate {
@@ -263,7 +268,7 @@ impl<F: RichField + Extendable<D>, const D: usize> PackedEvaluableBase<F, D> for
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct U32InterleaveGenerator {
     gate: U32InterleaveGate,
     row: usize,
@@ -310,17 +315,22 @@ impl<F: RichField + Extendable<D>, const D: usize> SimpleGenerator<F, D> for U32
     }
 
     fn id(&self) -> String {
-        todo!()
+        "U32InterleaveGenerator".to_string()
     }
 
     fn serialize(&self, dst: &mut Vec<u8>, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<()> {
-        todo!()
+        self.gate.serialize(dst, common_data)?;
+        dst.write_usize(self.row)?;
+        dst.write_usize(self.i)
     }
 
     fn deserialize(src: &mut plonky2::util::serialization::Buffer, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<Self>
     where
         Self: Sized {
-        todo!()
+        let gate = U32InterleaveGate::deserialize(src, common_data)?;
+        let row = src.read_usize()?;
+        let i = src.read_usize()?;
+        Ok( Self{gate, row, i} )
     }
 }
 

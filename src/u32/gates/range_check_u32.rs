@@ -17,9 +17,10 @@ use plonky2::plonk::circuit_builder::CircuitBuilder;
 use plonky2::plonk::plonk_common::{reduce_with_powers, reduce_with_powers_ext_circuit};
 use plonky2::plonk::vars::{EvaluationTargets, EvaluationVars, EvaluationVarsBase};
 use plonky2::util::ceil_div_usize;
+use plonky2::util::serialization::{Read, Write};
 
 /// A gate which can decompose a number into base B little-endian limbs.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct U32RangeCheckGate<F: RichField + Extendable<D>, const D: usize> {
     pub num_input_limbs: usize,
     _phantom: PhantomData<F>,
@@ -162,17 +163,21 @@ impl<F: RichField + Extendable<D>, const D: usize> Gate<F, D> for U32RangeCheckG
     }
 
     fn serialize(&self, dst: &mut Vec<u8>, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<()> {
-        todo!()
+        dst.write_usize(self.num_input_limbs)
     }
 
     fn deserialize(src: &mut plonky2::util::serialization::Buffer, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<Self>
     where
         Self: Sized {
-        todo!()
+        let num_input_limbs = src.read_usize()?;
+        Ok(Self {
+            num_input_limbs,
+            _phantom: PhantomData,
+        })
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct U32RangeCheckGenerator<F: RichField + Extendable<D>, const D: usize> {
     gate: U32RangeCheckGate<F, D>,
     row: usize,
@@ -213,17 +218,20 @@ impl<F: RichField + Extendable<D>, const D: usize> SimpleGenerator<F, D>
     }
 
     fn id(&self) -> String {
-        todo!()
+        "U32RangeCheckGenerator".to_string()
     }
 
     fn serialize(&self, dst: &mut Vec<u8>, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<()> {
-        todo!()
+        self.gate.serialize(dst, common_data)?;
+        dst.write_usize(self.row)
     }
 
     fn deserialize(src: &mut plonky2::util::serialization::Buffer, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<Self>
     where
         Self: Sized {
-        todo!()
+        let gate = U32RangeCheckGate::deserialize(src, common_data)?;
+        let row = src.read_usize()?;
+        Ok(Self { gate, row })
     }
 }
 
