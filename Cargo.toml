@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = { version = "1.0.40", default-features = false }
-plonky2 = { git = "https://github.com/metacraft-labs/plonky2" }
+plonky2 = { git = "https://github.com/metacraft-labs/plonky2/" }
 plonky2_maybe_rayon = { version = "0.1" }
 itertools = { version = "0.11.0", default-features = false }
 num = { version = "0.4", default-features = false, features = ["rand"] }
@@ -19,6 +19,7 @@ serde_with = { version = "2.2.0", features = ["hex"] }
 rayon = { version = "1.5.3" }
 hex = { version = "0.4.3" }
 rand = { version = "0.8.4", default-features = false }
+proc-macro2 = "=1.0.79"
 
 [dev-dependencies]
 debug_print = { version = "1.0.0" }

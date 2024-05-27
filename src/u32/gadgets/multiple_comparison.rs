@@ -5,8 +5,8 @@ use plonky2::field::extension::Extendable;
 use plonky2::hash::hash_types::RichField;
 use plonky2::iop::target::{BoolTarget, Target};
 use plonky2::plonk::circuit_builder::CircuitBuilder;
-use plonky2::util::ceil_div_usize;
 
+use crate::u32::ceil_div_usize;
 use crate::u32::gadgets::arithmetic_u32::U32Target;
 use crate::u32::gates::comparison::ComparisonGate;
 

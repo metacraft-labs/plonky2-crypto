@@ -12,7 +12,9 @@ use plonky2::gates::packed_util::PackedEvaluableBase;
 use plonky2::gates::util::StridedConstraintConsumer;
 use plonky2::hash::hash_types::RichField;
 use plonky2::iop::ext_target::ExtensionTarget;
-use plonky2::iop::generator::{GeneratedValues, SimpleGenerator, WitnessGenerator, WitnessGeneratorRef};
+use plonky2::iop::generator::{
+    GeneratedValues, SimpleGenerator, WitnessGenerator, WitnessGeneratorRef,
+};
 use plonky2::iop::target::Target;
 use plonky2::iop::wire::Wire;
 use plonky2::iop::witness::{PartitionWitness, Witness, WitnessWrite};
@@ -22,8 +24,10 @@ use plonky2::plonk::vars::{
     EvaluationTargets, EvaluationVars, EvaluationVarsBase, EvaluationVarsBaseBatch,
     EvaluationVarsBasePacked,
 };
-use plonky2::util::{bits_u64, ceil_div_usize};
+use plonky2::util::bits_u64;
 use plonky2::util::serialization::{Read, Write};
+
+use crate::u32::ceil_div_usize;
 
 /// A gate for checking that one value is less than or equal to another.
 #[derive(Clone, Debug, Default)]
@@ -312,21 +316,29 @@ impl<F: RichField + Extendable<D>, const D: usize> Gate<F, D> for ComparisonGate
         6 + 5 * self.num_chunks + self.chunk_bits()
     }
 
-    fn serialize(&self, dst: &mut Vec<u8>, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<()> {
+    fn serialize(
+        &self,
+        dst: &mut Vec<u8>,
+        common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>,
+    ) -> plonky2::util::serialization::IoResult<()> {
         dst.write_usize(self.num_bits)?;
         dst.write_usize(self.num_chunks)?;
         Ok(())
     }
 
-    fn deserialize(src: &mut plonky2::util::serialization::Buffer, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<Self>
+    fn deserialize(
+        src: &mut plonky2::util::serialization::Buffer,
+        common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>,
+    ) -> plonky2::util::serialization::IoResult<Self>
     where
-        Self: Sized {
+        Self: Sized,
+    {
         let num_bits = src.read_usize()?;
         let num_chunks = src.read_usize()?;
         Ok(Self {
             num_bits,
             num_chunks,
-            _phantom: PhantomData
+            _phantom: PhantomData,
         })
     }
 }
@@ -536,17 +548,25 @@ impl<F: RichField + Extendable<D>, const D: usize> SimpleGenerator<F, D>
         "ComparisonGenerator".to_string()
     }
 
-    fn serialize(&self, dst: &mut Vec<u8>, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<()> {
+    fn serialize(
+        &self,
+        dst: &mut Vec<u8>,
+        common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>,
+    ) -> plonky2::util::serialization::IoResult<()> {
         self.gate.serialize(dst, common_data)?;
         dst.write_usize(self.row)
     }
 
-    fn deserialize(src: &mut plonky2::util::serialization::Buffer, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<Self>
+    fn deserialize(
+        src: &mut plonky2::util::serialization::Buffer,
+        common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>,
+    ) -> plonky2::util::serialization::IoResult<Self>
     where
-        Self: Sized {
+        Self: Sized,
+    {
         let gate = ComparisonGate::deserialize(src, common_data)?;
         let row = src.read_usize()?;
-        Ok(Self {gate, row})
+        Ok(Self { gate, row })
     }
 }
 

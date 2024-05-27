@@ -10,14 +10,17 @@ use plonky2::gates::gate::Gate;
 use plonky2::gates::util::StridedConstraintConsumer;
 use plonky2::hash::hash_types::RichField;
 use plonky2::iop::ext_target::ExtensionTarget;
-use plonky2::iop::generator::{GeneratedValues, SimpleGenerator, WitnessGenerator, WitnessGeneratorRef};
+use plonky2::iop::generator::{
+    GeneratedValues, SimpleGenerator, WitnessGenerator, WitnessGeneratorRef,
+};
 use plonky2::iop::target::Target;
 use plonky2::iop::witness::{PartitionWitness, Witness, WitnessWrite};
 use plonky2::plonk::circuit_builder::CircuitBuilder;
 use plonky2::plonk::plonk_common::{reduce_with_powers, reduce_with_powers_ext_circuit};
 use plonky2::plonk::vars::{EvaluationTargets, EvaluationVars, EvaluationVarsBase};
-use plonky2::util::ceil_div_usize;
 use plonky2::util::serialization::{Read, Write};
+
+use crate::u32::ceil_div_usize;
 
 /// A gate which can decompose a number into base B little-endian limbs.
 #[derive(Copy, Clone, Debug, Default)]
@@ -139,7 +142,7 @@ impl<F: RichField + Extendable<D>, const D: usize> Gate<F, D> for U32RangeCheckG
         constraints
     }
 
-    fn generators(&self, row: usize, _local_constants: &[F]) -> Vec<WitnessGeneratorRef<F,D>> {
+    fn generators(&self, row: usize, _local_constants: &[F]) -> Vec<WitnessGeneratorRef<F, D>> {
         let gen = U32RangeCheckGenerator { gate: *self, row };
         vec![WitnessGeneratorRef::new(gen.adapter())]
     }
@@ -162,13 +165,21 @@ impl<F: RichField + Extendable<D>, const D: usize> Gate<F, D> for U32RangeCheckG
         self.num_input_limbs * (1 + self.aux_limbs_per_input_limb())
     }
 
-    fn serialize(&self, dst: &mut Vec<u8>, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<()> {
+    fn serialize(
+        &self,
+        dst: &mut Vec<u8>,
+        common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>,
+    ) -> plonky2::util::serialization::IoResult<()> {
         dst.write_usize(self.num_input_limbs)
     }
 
-    fn deserialize(src: &mut plonky2::util::serialization::Buffer, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<Self>
+    fn deserialize(
+        src: &mut plonky2::util::serialization::Buffer,
+        common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>,
+    ) -> plonky2::util::serialization::IoResult<Self>
     where
-        Self: Sized {
+        Self: Sized,
+    {
         let num_input_limbs = src.read_usize()?;
         Ok(Self {
             num_input_limbs,
@@ -221,14 +232,22 @@ impl<F: RichField + Extendable<D>, const D: usize> SimpleGenerator<F, D>
         "U32RangeCheckGenerator".to_string()
     }
 
-    fn serialize(&self, dst: &mut Vec<u8>, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<()> {
+    fn serialize(
+        &self,
+        dst: &mut Vec<u8>,
+        common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>,
+    ) -> plonky2::util::serialization::IoResult<()> {
         self.gate.serialize(dst, common_data)?;
         dst.write_usize(self.row)
     }
 
-    fn deserialize(src: &mut plonky2::util::serialization::Buffer, common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>) -> plonky2::util::serialization::IoResult<Self>
+    fn deserialize(
+        src: &mut plonky2::util::serialization::Buffer,
+        common_data: &plonky2::plonk::circuit_data::CommonCircuitData<F, D>,
+    ) -> plonky2::util::serialization::IoResult<Self>
     where
-        Self: Sized {
+        Self: Sized,
+    {
         let gate = U32RangeCheckGate::deserialize(src, common_data)?;
         let row = src.read_usize()?;
         Ok(Self { gate, row })
